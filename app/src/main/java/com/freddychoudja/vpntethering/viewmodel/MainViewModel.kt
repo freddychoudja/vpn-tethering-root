@@ -44,23 +44,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         registerReceiver()
-        refreshRootStatus()
+        requestRoot()
     }
 
     fun refreshRootStatus() {
         viewModelScope.launch {
             val granted = networkManager.isRootAvailable()
-            _uiState.update {
-                it.copy(
-                    rootGranted = granted,
-                    statusText = if (!granted) {
-                        "Root requis — accordez les droits Superutilisateur"
-                    } else {
-                        it.statusText
-                    }
-                )
-            }
+            applyRootStatus(granted)
         }
+    }
+
+    fun requestRoot() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isBusy = true, statusText = "Demande des droits root… (popup Magisk)")
+            }
+            val granted = networkManager.requestRootAccess()
+            applyRootStatus(granted)
+            _uiState.update { it.copy(isBusy = false) }
+        }
+    }
+
+    fun onPrimaryAction() {
+        val state = _uiState.value
+        if (state.isBusy) return
+
+        if (state.rootGranted != true) {
+            requestRoot()
+            return
+        }
+
+        toggle()
     }
 
     fun toggle() {
@@ -75,6 +89,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             TetheringForegroundService.start(context, "Activation du routage…")
             _uiState.update { it.copy(statusText = "Activation en cours…") }
+        }
+    }
+
+    private fun applyRootStatus(granted: Boolean) {
+        _uiState.update {
+            it.copy(
+                rootGranted = granted,
+                statusText = if (granted) {
+                    if (it.isActive) it.statusText
+                    else "Root OK — activez Hotspot + VPN puis Activer"
+                } else {
+                    "Root refusé. Ouvrez Magisk → Superutilisateur → autorisez cette app (ou retirez-la de la DenyList), puis réessayez."
+                }
+            )
         }
     }
 

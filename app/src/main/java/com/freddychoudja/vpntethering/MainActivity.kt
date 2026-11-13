@@ -18,7 +18,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.freddychoudja.vpntethering.ui.MainScreen
 import com.freddychoudja.vpntethering.ui.theme.VpnTetheringTheme
 import com.freddychoudja.vpntethering.viewmodel.MainViewModel
-import com.topjohnwu.superuser.Shell
 
 class MainActivity : ComponentActivity() {
 
@@ -32,22 +31,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         requestNotificationPermissionIfNeeded()
 
-        // Demande root de façon asynchrone dès l'ouverture
-        Shell.getShell {
-            viewModel.refreshRootStatus()
-        }
-
         setContent {
             VpnTetheringTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val state by viewModel.uiState.collectAsStateWithLifecycle()
                     MainScreen(
                         state = state,
-                        onToggle = viewModel::toggle
+                        onPrimaryAction = viewModel::onPrimaryAction
                     )
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-vérifie après retour de Magisk / accord manuel
+        viewModel.refreshRootStatus()
     }
 
     private fun requestNotificationPermissionIfNeeded() {

@@ -33,8 +33,10 @@ import com.freddychoudja.vpntethering.viewmodel.UiState
 @Composable
 fun MainScreen(
     state: UiState,
-    onToggle: () -> Unit
+    onPrimaryAction: () -> Unit
 ) {
+    val hasRoot = state.rootGranted == true
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -73,11 +75,15 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(48.dp))
 
             Button(
-                onClick = onToggle,
-                enabled = !state.isBusy && state.rootGranted != false,
+                onClick = onPrimaryAction,
+                enabled = !state.isBusy,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (state.isActive) Danger else Blue,
+                    containerColor = when {
+                        !hasRoot -> BlueDark
+                        state.isActive -> Danger
+                        else -> Blue
+                    },
                     contentColor = Mist,
                     disabledContainerColor = BlueDark.copy(alpha = 0.35f)
                 ),
@@ -91,7 +97,11 @@ fun MainScreen(
                     )
                 } else {
                     Text(
-                        text = if (state.isActive) "Désactiver" else "Activer",
+                        text = when {
+                            !hasRoot -> "Demander\nroot"
+                            state.isActive -> "Désactiver"
+                            else -> "Activer"
+                        },
                         style = MaterialTheme.typography.labelLarge,
                         textAlign = TextAlign.Center
                     )

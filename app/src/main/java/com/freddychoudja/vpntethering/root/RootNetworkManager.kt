@@ -25,6 +25,23 @@ class RootNetworkManager {
         Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot
     }
 
+    /**
+     * Force une nouvelle session su (popup Magisk / KernelSU / SuperSU).
+     * Retourne true si l'utilisateur a accordé le root.
+     */
+    suspend fun requestRootAccess(): Boolean = withContext(Dispatchers.IO) {
+        // Invalide une éventuelle session non-root mise en cache
+        runCatching { Shell.getCachedShell()?.close() }
+
+        val shell = Shell.getShell()
+        if (shell.isRoot) return@withContext true
+
+        // Relance explicite pour déclencher la popup Superutilisateur
+        val probe = Shell.cmd("id").exec()
+        val uidRoot = probe.out.any { it.contains("uid=0") }
+        uidRoot || Shell.getShell().isRoot
+    }
+
     suspend fun detectInterfaces(): Interfaces? = withContext(Dispatchers.IO) {
         val hotspot = detectHotspotInterface() ?: return@withContext null
         val vpn = detectVpnInterface() ?: return@withContext null
