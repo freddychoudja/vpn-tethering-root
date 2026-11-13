@@ -74,7 +74,7 @@ class RootNetworkManager {
             disableTetheringInternal(hotspot, vpn)
             ApplyResult(
                 success = false,
-                message = "Échec iptables : ${result.stderr.joinToString(" ").ifBlank { "erreur inconnue" }}"
+                message = "Échec iptables : ${result.err.joinToString(" ").ifBlank { "erreur inconnue" }}"
             )
         }
     }
